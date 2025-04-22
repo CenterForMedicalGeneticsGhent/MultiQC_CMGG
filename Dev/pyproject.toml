@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "multiqc_cmgg"
+version = "0.0.2"
+dependencies = [
+    "pandas",
+
+]
+author = "Thomas Stevens"
+description = "MultiQC plugin for interal use at CMGG"
+readme = "README.md"
+license = "MIT"
+keywords = ["bioinformatics", "biology", "sequencing", "NGS", "next generation sequencing", "quality control"]
+classifiers=[
+        "Development Status :: 4 - Beta",
+        "Environment :: Console",
+        "Environment :: Web Environment",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: MIT License",
+        "Natural Language :: English",
+        "Operating System :: MacOS :: MacOS X",
+        "Operating System :: POSIX",
+        "Operating System :: Unix",
+        "Programming Language :: Python",
+        "Topic :: Scientific/Engineering",
+        "Topic :: Scientific/Engineering :: Bio-Informatics",
+        "Topic :: Scientific/Engineering :: Visualization",
+    ]
+
+[project.optional-dependencies]
+dev="ruff>=0.8.3"
+
+[project.entry-points."multiqc.modules.v1"]
+picard_demultiplex = "multiqc_cmgg.modules.picard_demultiplex.demultiplex:MultiqcModule"
+
+[project.entry-points."multiqc.templates.v1"]
+cmgg_template = "multiqc_cmgg.templates.cmgg"
+
+#[project.entry-points."multiqc.hooks.v1"]
+#config_loaded = "multiqc_cmgg.multiqc_cmgg:update_config"
+
+[tool.setuptools]
+packages = ["multiqc"]
+package-data = { multiqc = ["py.typed"] }
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+
+
