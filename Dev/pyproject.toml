@@ -39,8 +39,8 @@ picard_demultiplex = "multiqc_cmgg.modules.picard_demultiplex.demultiplex:Multiq
 [project.entry-points."multiqc.templates.v1"]
 cmgg_template = "multiqc_cmgg.templates.cmgg"
 
-#[project.entry-points."multiqc.hooks.v1"]
-#config_loaded = "multiqc_cmgg.multiqc_cmgg:update_config"
+[project.entry-points."multiqc.hooks.v1"]
+config_loaded = "multiqc_cmgg.multiqc_cmgg:update_config"
 
 [tool.setuptools]
 packages = ["multiqc"]
