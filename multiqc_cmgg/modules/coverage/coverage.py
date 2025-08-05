@@ -149,6 +149,11 @@ class MultiqcModule(BaseMultiqcModule):
         threshs, hidden_threshs = config.get_cov_thresholds("coverage_config")
         for f in self.find_log_files(f"coverage/region_dist", filecontents=False, filehandles=True):
             s_name = self.clean_s_name(f["fn"], f)
+            
+            # Remove _per_exon suffix if present
+            if s_name.endswith("_per_exon"):
+                s_name = s_name.replace("_per_exon", "")
+                
             self.add_data_source(f, s_name=s_name, section="genome_results")
             cum_fraction_by_cov: Dict[int, float] = dict()
             for line in f["f"]:

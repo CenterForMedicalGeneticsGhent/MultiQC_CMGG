@@ -54,5 +54,111 @@ http://multiqc.info
 
 {% include 'foot.html' %}
 
+<script>
+$(document).ready(function() {
+    console.log('CMGG Gene/Panel column splitting started');
+    
+    // Wait for the table to be fully loaded (time for MultiQC to complete DOM rendering)
+    setTimeout(function() {
+        // Find General Stats table (try both possible IDs)
+        var $generalStatsTable = $('#general_stats_table_table');
+        if ($generalStatsTable.length === 0) {
+            $generalStatsTable = $('#general_stats_table');
+        }
+        if ($generalStatsTable.length === 0) {
+            console.log('General stats table not found');
+            return;
+        }
+        
+        console.log('Found General Stats table:', $generalStatsTable.attr('id'));
+        
+        // DEBUG: Print all headers to see the actual structure
+        console.log('All table headers:');
+        $generalStatsTable.find('thead th').each(function(index) {
+            console.log('Header', index + ':', $(this).text().trim());
+        });
+        
+        // DEBUG: Print first few data rows to understand table structure
+        console.log('First few data rows:');
+        $generalStatsTable.find('tbody tr').slice(0, 3).each(function(rowIndex) {
+            var $row = $(this);
+            console.log('Row', rowIndex + ':');
+            
+            // Check if there's a row header (th in tbody)
+            var $rowHeader = $row.find('th');
+            if ($rowHeader.length > 0) {
+                console.log('  Row Header:', $rowHeader.text().trim());
+            }
+            
+            // Check all cells in the row
+            $row.find('td').each(function(cellIndex) {
+                console.log('  Cell', cellIndex + ':', $(this).text().trim());
+            });
+            
+            // Check for any other elements
+            console.log('  Row HTML:', $row.html().substring(0, 200) + '...');
+        });
+        
+        // Find the position (index) of Sample Name column
+        var sampleNameColumnIndex = -1;
+        $generalStatsTable.find('thead th').each(function(index) {
+            var headerText = $(this).text().trim();
+            console.log('Checking header', index + ':', headerText);
+            // Try different possible header names
+            if (headerText === 'Sample Name' || headerText === 'Sample' || headerText === 'Name' || headerText === 'Samples') {
+                sampleNameColumnIndex = index;
+                console.log('Sample column found at index:', index, 'with text:', headerText);
+                return false; // Acts as break in jQuery each
+            }
+        });
+        
+        if (sampleNameColumnIndex === -1) {
+            console.log('Sample Name column not found');
+            return;
+        }
+        
+        // Change Sample Name header to keep as "Sample Name" and add Gene Panel column
+        var $headerRow = $generalStatsTable.find('thead tr');
+        var $sampleNameHeader = $headerRow.find('th').eq(sampleNameColumnIndex);
+        
+        // Keep Sample Name header as is (no change needed)
+        // Add Gene Panel column right after Sample Name column
+        $sampleNameHeader.after('<th class="text-center">Gene Panel</th>');
+        
+        // Process each data row (split Sample Name into Sample ID and Panel)
+        $generalStatsTable.find('tbody tr').each(function() {
+            var $row = $(this);
+            
+            // Get sample name from row header (th element), NOT from td cells
+            var $rowHeader = $row.find('th');
+            if ($rowHeader.length === 0) {
+                console.log('No row header found for this row');
+                return; // Skip this row
+            }
+            
+            var sampleName = $rowHeader.text().trim();
+            console.log('Processing sample:', sampleName);
+            
+            // Sample Name parsing logic
+            // Example: "D2311076_NeuroMuscular" → Sample Name: "D2311076", Gene Panel: "NeuroMuscular"
+            var parts = sampleName.split('_');
+            var sampleId = parts[0] || sampleName; // First part is Sample ID (D2311076)
+            var genePanel = parts.length > 1 ? parts.slice(1).join('_') : ''; // Rest is Gene Panel (NeuroMuscular)
+            
+            console.log('Parsed - Sample Name:', sampleId, 'Gene Panel:', genePanel);
+            
+            // Change row header content to Sample ID only
+            $rowHeader.text(sampleId);
+            
+            // Add Gene Panel column data by inserting a new td after the row header
+            $rowHeader.after('<td class="text-center">' + genePanel + '</td>');
+        });
+        
+        console.log('Gene/Panel column splitting completed');
+        
+    }, 1000); // Wait 1 second (MultiQC rendering completion time)
+});
+</script>
+
 </body>
 </html>
