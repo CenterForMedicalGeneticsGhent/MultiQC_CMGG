@@ -55,3 +55,25 @@ More thorough explaination on setting up modules, installation and integration i
 | Name | Description|
 | ---- | ---------- |
 | cmgg | CMGG specfic template with custom logo's and affiliate links. To enable this template, add the `-t/--template cmgg` option to the command line. |
+
+## Development
+
+This project uses [pixi](https://pixi.sh/) for dependency management and development.
+
+### Installation
+
+To install the project dependencies and set up the development environment:
+
+```bash
+pixi install
+```
+
+### Testing
+
+To run the plugin against the provided test data:
+
+```bash
+pixi run multiqc test_data
+```
+
+This command will execute MultiQC using the plugin on the files in the `test_data` directory.
