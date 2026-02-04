@@ -138,3 +138,6 @@ multiqc_data
 
 #outputs
 output
+# pixi environments
+.pixi/*
+!.pixi/config.toml
