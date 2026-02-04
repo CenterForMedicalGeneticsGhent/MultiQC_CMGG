@@ -13,14 +13,3 @@ USER root
 COPY . /src/
 # Install dependencies and the package
 RUN pip install --no-cache-dir /src/
-
-<<<<<<< HEAD
-# Switch back to multiqc user
-USER multiqc
-=======
-RUN pip install --no-cache-dir -e /src/
-
-RUN pip install --force-reinstall "numpy<2.0"
-
-RUN multiqc --help
->>>>>>> f69c9d7 (Change in dockerfile)
