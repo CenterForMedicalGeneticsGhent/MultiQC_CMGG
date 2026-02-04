@@ -7,7 +7,12 @@ LABEL org.opencontainers.image.title="MultiQC_CMGG" \
     org.opencontainers.image.source="https://github.com/CenterForMedicalGeneticsGhent/MultiQC_CMGG" \
     org.opencontainers.image.licenses="MIT"
 
-COPY . /src/
+# Switch to root user for installation
+USER root
 
+COPY . /src/
 # Install dependencies and the package
 RUN pip install --no-cache-dir /src/
+
+# Switch back to multiqc user
+USER multiqc
