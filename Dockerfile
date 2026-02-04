@@ -1,15 +1,13 @@
-ARG MULTIQC_TAG=1.11--pyhdfd78af_0
+ARG MULTIQC_VERSION=v1.33
 
-FROM quay.io/biocontainers/multiqc:${MULTIQC_TAG}
+FROM ghcr.io/multiqc/multiqc:${MULTIQC_VERSION}
 
-ADD . /src/
+LABEL org.opencontainers.image.title="MultiQC_CMGG" \
+    org.opencontainers.image.description="MultiQC plugin for CMGG" \
+    org.opencontainers.image.source="https://github.com/CenterForMedicalGeneticsGhent/MultiQC_CMGG" \
+    org.opencontainers.image.licenses="MIT"
 
-RUN python3 -m pip install --upgrade pip
+COPY . /src/
 
-RUN pip install --no-cache-dir networkx==2.8 colormath==3.0.0 spectra==0.0.11
-
-RUN pip install --no-cache-dir -e /src/
-
-RUN pip install --force-reinstall "numpy<2.0"
-
-RUN multiqc --help
+# Install dependencies and the package
+RUN pip install --no-cache-dir /src/

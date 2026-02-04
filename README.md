@@ -28,10 +28,22 @@ This plugin can be installed using the following methods
 - using `pip`:
 
 ```bash
+pip install multiqc_cmgg
+```
+
+or to get the latest version from github:
+
+```bash
 pip install --upgrade --force-reinstall git+https://github.com/CenterForMedicalGeneticsGhent/MultiQC_CMGG.git
 ```
 
 - using `docker`:
+
+```bash
+docker pull quay.io/cmgg/multiqc_cmgg:latest
+```
+
+or to build the image yourself: 
 
 ```bash
 docker build https://github.com/CenterForMedicalGeneticsGhent/MultiQC_CMGG.git -t multiqc_cmgg
