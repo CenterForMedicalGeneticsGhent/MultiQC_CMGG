@@ -45,7 +45,6 @@ class MultiqcModule(BaseMultiqcModule):
         self.write_data_file(MSH2_varcount_data, "multiqc_MSH2_hotspot_varcount")
         self.add_software_version(None)
 
-        # log.info(MSH2_varcount_data)
         # Add MSH2_hotspot Table
         config_table = {
             "id": "MSH2_hotspot_varcount",
@@ -62,33 +61,32 @@ class MultiqcModule(BaseMultiqcModule):
             },
             "MSH2_c.942+3A>T":{
                 "title" : "MSH2_c.942+3A>T (counts)",
-                "description":"frequency of 3A>T and counts",
-                "cond_formatting_rules":{"sanger":[{"s_contains":"- Sangeren!"}]},
+                "description":"frequency of MSH2_c.942+3A>T and counts",
+                "cond_formatting_rules":{"sanger":[{"s_contains":" "}]},
                 "cond_formatting_colours":[{"sanger":"#EE4B2B"}],
                 "scale":False,
             },
             "MSH2_c.942+2T>A":{
                 "title" : "MSH2_c.942+2T>A (counts)",
-                "description":"frequency of 2T>A and counts",
-                "cond_formatting_rules":{"sanger":[{"s_contains":"- Sangeren!"}]},
+                "description":"frequency of MSH2_c.942+2T>A and counts",
+                "cond_formatting_rules":{"sanger":[{"s_contains":" "}]},
                 "cond_formatting_colours":[{"sanger":"#EE4B2B"}],
                 "scale":False,
             },
             "MSH2_c.942+2T>C":{
                 "title" : "MSH2_c.942+2T>C (counts)",
-                "description":"frequency of 2T>C and counts",
-                "cond_formatting_rules":{"sanger":[{"s_contains":"- Sangeren!"}]},
+                "description":"frequency of MSH2_c.942+2T>C and counts",
+                "cond_formatting_rules":{"sanger":[{"s_contains":" "}]},
                 "cond_formatting_colours":[{"sanger":"#EE4B2B"}],
                 "scale":False,
             },
             "MSH2_c.942+2T>G":{
                 "title" : "MSH2_c.942+2T>G (counts)",
-                "description":"frequency of 2T>G and counts",
-                "cond_formatting_rules":{"sanger":[{"s_contains":"- Sangeren!"}]},
+                "description":"frequency of MSH2_c.942+2T>G and counts",
+                "cond_formatting_rules":{"sanger":[{"s_contains":" "}]},
                 "cond_formatting_colours":[{"sanger":"#EE4B2B"}],
                 "scale":False,
-            },
-            
+            }
         }
         self.add_section(
             plot=table.plot(data=MSH2_varcount_data, headers=headers, pconfig=config_table),
@@ -103,6 +101,7 @@ def parse_file(f: str) -> Dict[str, Union[float, str]]:
     
     if len(lines) < 3:
         # Not enough data, return an empty dictionary
+        log.warning("Not enough lines in the file to parse MSH2 hotspot variant counts.")
         return parsed_data
     headers = lines[2].strip().split(" ")[1:6]
     values = lines[3].strip().split(" ")[1:6]
@@ -110,16 +109,16 @@ def parse_file(f: str) -> Dict[str, Union[float, str]]:
     for key, value in zip(headers, values):
         parsed_data[key] = value
 
-    #calculating frequency of mutation:
+    #Calculating frequency of variants and determining need for sanger sequencing:
     for variant,counts in parsed_data.items():
         if variant != "MSH2_c.942+3_wt":
-            freq=round((int(counts)/(int(parsed_data["MSH2_c.942+3_wt"])+int(counts)))*100 ,2)
-            # Determining need for sanger
+            freq=round((int(counts))/(int(parsed_data["MSH2_c.942+3_wt"])+int(counts))*100 ,2)
+            # Determining need for sanger according to threshold and adding frequency to parsed_data
             if freq >= config.MSH2_hotspot_varcount_config["sanger_threshold"]:
-                parsed_data[variant]=f"{freq}({counts}) - Sangeren!"
+                parsed_data[variant]=f"{freq}% ({counts})"
             else:
-                parsed_data[variant]=f"{freq}({counts})"
+                parsed_data[variant]=f"{freq}% ({counts})"
         else:
-            parsed_data[variant]=counts
+            parsed_data[variant]=int(parsed_data[variant])
 
     return parsed_data
