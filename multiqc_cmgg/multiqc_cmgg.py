@@ -38,18 +38,22 @@ def plugin_execution_start():
         return None
 
     log.debug("CMGG - Updating config")
-    # Add module to module order
-    config.module_order.extend(["sample_gender","coverage","MSH2_hotspot_varcount","msi_sensor_pro"])
-     # Move module to the top
-    config.top_modules.extend(["sample_gender","coverage","MSH2_hotspot_varcount","msi_sensor_pro"])
 
-    list_sps=[{"sample_gender/xy": {"fn": "*_xy.tsv", "shared": False}},
-            {"sample_gender/hetx": {"fn": "*_hetx.tsv", "shared": False}},
-            {"sample_gender/sry": {"fn": "*_sry.tsv", "shared": False}},
-            {"coverage/region_dist": {"fn": "*.mosdepth.region.dist.txt","shared": False}},
-            {"MSH2_hotspot_varcount/counts": {"fn": "*.counts.txt","shared": False}},
-            {"msi_sensor_pro/summary": {"fn": "*_summary_msi*","shared": False}},
-            {"msi_sensor_pro/all": {"fn": "*_all_msi*","shared": False}},
+    # Add module to module order
+    modules = ["sample_gender", "coverage", "MSH2_hotspot_varcount", "msi_sensor_pro"]
+    config.module_order.extend(modules)
+    # Move module to the top
+    config.top_modules.extend(modules)
+
+    search_patterns = [
+        {"sample_gender/xy": {"fn": "*_xy.tsv", "shared": False}},
+        {"sample_gender/hetx": {"fn": "*_hetx.tsv", "shared": False}},
+        {"sample_gender/sry": {"fn": "*_sry.tsv", "shared": False}},
+        {"coverage/region_dist": {"fn": "*.mosdepth.region.dist.txt", "shared": False}},
+        {"MSH2_hotspot_varcount/counts": {"fn": "*.counts.txt", "shared": False}},
+        {"msi_sensor_pro/summary": {"fn": "*_summary_msi*", "shared": False}},
+        {"msi_sensor_pro/all": {"fn": "*_all_msi*", "shared": False}},
     ]
-    for searchp in list_sps:
-        config.update_dict(config.sp,searchp)
+
+    for pattern in search_patterns:
+        config.update_dict(config.sp, pattern)
