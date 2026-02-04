@@ -178,7 +178,10 @@ class MultiqcModule(BaseMultiqcModule):
         ):
             s_name = self.clean_s_name(f["fn"], f)
             lines = f["f"].splitlines()
-
+            
+            # Ensure sample is present even if file only contains header
+            sample_data.setdefault(s_name, {})
+            
             for line in lines[1:]:  # Skip header
                 parts = line.strip().split("\t")
                 if len(parts) < 10:
