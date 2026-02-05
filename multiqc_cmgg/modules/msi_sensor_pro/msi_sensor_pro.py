@@ -113,6 +113,7 @@ class MultiqcModule(BaseMultiqcModule):
         """
         msisensorpro_data = {}
         all_zero = True
+        min_bar = 0.9  # Minimum bar height for visibility in graph
 
         for sample_name, sample_data in data_summary.items():
             msisensorpro_score = sample_data["perc"]
@@ -128,14 +129,15 @@ class MultiqcModule(BaseMultiqcModule):
                 msi_status = "MSS"
 
             # Structure data for bargraph - each sample gets assigned to one category
+            display_score = msisensorpro_score
+            if display_score == 0.0:
+                display_score = min_bar
+
             sample_entry = {
-                "MSS": msisensorpro_score if msi_status == "MSS" else 0,
-                "MSI-high": msisensorpro_score if msi_status == "MSI-high" else 0,
-                "Low-coverage": msisensorpro_score
-                if msi_status == "Low-coverage"
-                else 0,
+                msi_status: display_score,
             }
-            msisensorpro_data[sample_name] = sample_entry
+            sample_label = f"{sample_name} ({msi_status})"
+            msisensorpro_data[sample_label] = sample_entry
             if any(value != 0.0 for value in sample_entry.values()):
                 all_zero = False
 
