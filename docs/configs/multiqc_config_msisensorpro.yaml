@@ -12,6 +12,9 @@ table_cond_formatting_rules:
     fail:
       - gt: 30.0
         eq: 30.0
+  num_sites:
+    warn:
+      - lt: 10
 
 table_cond_formatting_colours:
   - pass: "#2ecc71"
@@ -30,5 +33,7 @@ custom_plot_config:
     defaultsort:
       - column: "perc"
         direction: desc
+      - column: "num_sites"
+        direction: asc
 
 template: "cmgg"
