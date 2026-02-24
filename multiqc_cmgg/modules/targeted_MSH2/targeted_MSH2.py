@@ -25,7 +25,9 @@ class MultiqcModule(BaseMultiqcModule):
         # Find and load any input files for this module
         MSH2_varcount_data: Dict[str, Dict[str, Union[float, str]]] = dict()
 
-        for f in self.find_log_files("targeted/MSH2"):
+        log.info("Searching for targeted_MSH2 files...")
+        for f in self.find_log_files("targeted_MSH2"):
+            log.info(f"Found file: {f['fn']} with s_name: {f['s_name']}")
             self.add_data_source(f)
             s_name = f["s_name"]
             parsed = parse_file(f["f"])

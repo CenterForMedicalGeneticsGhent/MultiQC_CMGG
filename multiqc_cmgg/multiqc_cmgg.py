@@ -50,7 +50,7 @@ def plugin_execution_start():
         {"sample_gender/hetx": {"fn": "*_hetx.tsv", "shared": False}},
         {"sample_gender/sry": {"fn": "*_sry.tsv", "shared": False}},
         {"coverage/region_dist": {"fn": "*.mosdepth.region.dist.txt", "shared": False}},
-        {"targeted/MSH2": {"fn": "*.counts.txt", "shared": False}},
+        {"targeted_MSH2": {"fn": "*.counts.txt", "shared": False}},
         {"msi_sensor_pro/summary": {"fn": "*_summary_msi*", "shared": False}},
         {"msi_sensor_pro/all": {"fn": "*_all_msi*", "shared": False}},
     ]
