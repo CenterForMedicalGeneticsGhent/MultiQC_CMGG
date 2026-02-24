@@ -19,7 +19,7 @@ This can be achieved by adding the following parameter to your multiqc_config.ya
 ```yaml
 run_modules:
   - coverage
-  - MSH2_hotspot_varcount
+  - targeted_MSH2
   - sample_gender
   - ...
 ```
@@ -48,14 +48,14 @@ run_modules:
   - coverage
 ```
 
-### MSH2_hotspot_varcount
+### targeted_MSH2
 
-The MSH2_hotspot_varcount module is designed to take results from the [nf-cmgg/report](https://github.com/nf-cmgg/report) pipeline. This pipeline produces \<sample>.counts.txt files and these files get parsed into a multiqc report.
+The targeted_MSH2 module is designed to take results from the [nf-cmgg/report](https://github.com/nf-cmgg/report) pipeline. This pipeline produces \<sample>.counts.txt files and these files get parsed into a multiqc report.
 
 This module requires the presence of the sanger_threshold parameter. This parameter defines the threshold at which samples are colored for failure or pass. 
 
 ```yaml
-MSH2_hotspot_varcount_config:
+targeted_MSH2_config:
   sanger_threshold : 20
 ```
 

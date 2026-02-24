@@ -7,10 +7,10 @@ from typing import Dict, Union
 # Initialise the main MultiQC logger
 log = logging.getLogger("multiqc")
 
-log.info("started MSH2_hotspot_varcount")
+log.info("started targeted_MSH2")
 
 # Get config with defaults
-msh2_config = getattr(config, "MSH2_hotspot_varcount_config", {"sanger_threshold": 5.0})
+msh2_config = getattr(config, "targeted_MSH2_config", {"sanger_threshold": 5.0})
 log.info(f"threshold Sanger has been set to {msh2_config.get('sanger_threshold', 5.0)}")
 
 
@@ -18,14 +18,14 @@ class MultiqcModule(BaseMultiqcModule):
     def __init__(self):
         # Initialise the parent module Class object
         super(MultiqcModule, self).__init__(
-            name="MSH2_hotspot_varcount",
-            info="Analysis module used for MSH2 variance counting",
+            name="targeted_MSH2",
+            info="Module to report targeted MSH2 variants",
         )
 
         # Find and load any input files for this module
         MSH2_varcount_data: Dict[str, Dict[str, Union[float, str]]] = dict()
 
-        for f in self.find_log_files("MSH2_hotspot_varcount/counts"):
+        for f in self.find_log_files("targeted/MSH2"):
             self.add_data_source(f)
             s_name = f["s_name"]
             parsed = parse_file(f["f"])
@@ -40,19 +40,19 @@ class MultiqcModule(BaseMultiqcModule):
         # Debug for amount of reports found
         n_reports_found = len(MSH2_varcount_data)
         if n_reports_found > 0:
-            log.debug(f"Found {len(MSH2_varcount_data)} MSH2_hotspot_varcount reports")
+            log.debug(f"Found {len(MSH2_varcount_data)} targeted_MSH2 reports")
 
         if n_reports_found == 0:
-            log.debug("No MSH2_hotspot_varcount reports found")
+            log.debug("No targeted_MSH2 reports found")
 
         # Write parsed report data to a file
-        self.write_data_file(MSH2_varcount_data, "multiqc_MSH2_hotspot_varcount")
+        self.write_data_file(MSH2_varcount_data, "multiqc_targeted_MSH2")
         self.add_software_version(None)
 
-        # Add MSH2_hotspot Table
+        # Add targeted_MSH2 Table
         config_table = {
-            "id": "MSH2_hotspot_varcount",
-            "title": "MSH2_hotspot_varcount",
+            "id": "targeted_MSH2",
+            "title": "Targeted: MSH2",
             "sort_rows": True,
             "no_violin": True,
         }
@@ -132,7 +132,7 @@ def parse_file(f: str) -> Dict[str, Union[float, str]]:
             # Re-fetch config to be safe or pass it.
             # Since parse_file is outside class, we access config or use default.
             msh2_config = getattr(
-                config, "MSH2_hotspot_varcount_config", {"sanger_threshold": 5.0}
+                config, "targeted_MSH2_config", {"sanger_threshold": 5.0}
             )
             threshold = msh2_config.get("sanger_threshold", 5.0)
 
