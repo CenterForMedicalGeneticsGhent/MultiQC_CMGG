@@ -29,21 +29,18 @@ class MultiqcModule(BaseMultiqcModule):
             self.add_data_source(f)
             s_name = f["s_name"]
             parsed = parse_file(f["f"])
-            if s_name not in MSH2_varcount_data:
-                MSH2_varcount_data[s_name] = parsed
+            MSH2_varcount_data[s_name] = parsed
 
-            if s_name in MSH2_varcount_data:
-                MSH2_varcount_data[s_name].update(parsed)
-                # Filter to strip out ignored sample names
-                MSH2_varcount_data = self.ignore_samples(MSH2_varcount_data)
+        # Filter to strip out ignored sample names
+        MSH2_varcount_data = self.ignore_samples(MSH2_varcount_data)
 
         # Debug for amount of reports found
         n_reports_found = len(MSH2_varcount_data)
         if n_reports_found > 0:
-            log.debug(f"Found {len(MSH2_varcount_data)} targeted_MSH2 reports")
+            log.info(f"Found {n_reports_found} targeted_MSH2 reports")
 
         if n_reports_found == 0:
-            log.debug("No targeted_MSH2 reports found")
+            log.warning("No targeted_MSH2 reports found")
 
         # Write parsed report data to a file
         self.write_data_file(MSH2_varcount_data, "multiqc_targeted_MSH2")
