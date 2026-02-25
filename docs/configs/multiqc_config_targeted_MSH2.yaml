@@ -11,9 +11,9 @@ custom_plot_config:
       - column: "MSH2_c.942+2T>C"
         direction: desc
 
-# Defining threshold for MSH2 hotspot variants need for Sanger sequencing
+# Defining VAF threshold for MSH2 hotspot variants need for Sanger sequencing
 targeted_MSH2_config:
-  sanger_threshold : 20
+  sanger_threshold : 28
 
 # Assigning modules to run
 run_modules:
