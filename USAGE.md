@@ -50,13 +50,13 @@ run_modules:
 
 ### targeted_MSH2
 
-The targeted_MSH2 module is designed to take results from the [nf-cmgg/report](https://github.com/nf-cmgg/report) pipeline. This pipeline produces \<sample>.counts.txt files and these files get parsed into a multiqc report.
+The targeted_MSH2 module is designed to take results from the [nf-cmgg/report](https://github.com/nf-cmgg/report) pipeline. This pipeline produces `<sample>.counts.txt` files and these files get parsed into a multiqc report.
 
-This module requires the presence of the sanger_threshold parameter. This parameter defines the threshold at which samples are colored for failure or pass. 
+This module has a configurable `sanger_threshold` parameter. This defines the threshold at which samples are colored for failure or pass.
 
 ```yaml
 targeted_MSH2_config:
-  sanger_threshold : 20
+  sanger_threshold : 28
 ```
 
 ### Sample_gender
