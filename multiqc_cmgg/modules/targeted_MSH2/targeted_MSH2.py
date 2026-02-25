@@ -12,7 +12,7 @@ class MultiqcModule(BaseMultiqcModule):
         # Initialise the parent module Class object
         super(MultiqcModule, self).__init__(
             name="targeted_MSH2",
-            info="Module om gericht MSH2 hotspot varianten NM_000251.3:c.942+3A>T,c.942+2T>A,c.942+2T>C,c.942+2T>G na te kijken.",
+            info="Module to report MSH2 hotspot variants NM_000251.3:c.942+3A>T,c.942+2T>A,c.942+2T>C,c.942+2T>G",
         )
 
         # Get config with defaults
@@ -54,39 +54,38 @@ class MultiqcModule(BaseMultiqcModule):
             "title": "Targeted: MSH2",
             "sort_rows": True,
             "no_violin": True,
-            "col1_header": "DNA-nummer",
         }
 
         headers = {
             "MSH2_c.942+3_wt": {
                 "title": "WT readcount",
-                "description": "aantal wild type reads",
+                "description": "wild type readcount",
                 "scale": "PuBu",
             },
             "MSH2_c.942+3A>T": {
-                "title": "c.942+3A>T frequentie (reads)",
-                "description": "frequentie c.942+3A>T (aantal reads)",
+                "title": "c.942+3A>T frequency (readcount)",
+                "description": "frequency c.942+3A>T (readcount)",
                 "cond_formatting_rules": {"sanger": [{"s_contains": " "}]},
                 "cond_formatting_colours": [{"sanger": "#EE4B2B"}],
                 "scale": False,
             },
             "MSH2_c.942+2T>A": {
-                "title": "c.942+2T>A frequentie (reads)",
-                "description": "frequentie c.942+2T>A (aantal reads)",
+                "title": "c.942+2T>A frequency (readcount)",
+                "description": "frequency c.942+2T>A (readcount)",
                 "cond_formatting_rules": {"sanger": [{"s_contains": " "}]},
                 "cond_formatting_colours": [{"sanger": "#EE4B2B"}],
                 "scale": False,
             },
             "MSH2_c.942+2T>C": {
-                "title": "c.942+2T>C frequentie (reads)",
-                "description": "frequentie c.942+2T>C (aantal reads)",
+                "title": "c.942+2T>C frequency (readcount)",
+                "description": "frequency c.942+2T>C (readcount)",
                 "cond_formatting_rules": {"sanger": [{"s_contains": " "}]},
                 "cond_formatting_colours": [{"sanger": "#EE4B2B"}],
                 "scale": False,
             },
             "MSH2_c.942+2T>G": {
-                "title": "c.942+2T>G frequentie (reads)",
-                "description": "frequentie c.942+2T>G (aantal reads)",
+                "title": "c.942+2T>G frequency (readcount)",
+                "description": "frequency c.942+2T>G (readcount)",
                 "cond_formatting_rules": {"sanger": [{"s_contains": " "}]},
                 "cond_formatting_colours": [{"sanger": "#EE4B2B"}],
                 "scale": False,
