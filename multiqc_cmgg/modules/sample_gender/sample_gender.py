@@ -94,7 +94,7 @@ class MultiqcModule(BaseMultiqcModule):
 
     def _create_table(self):
         config_table = {
-            "id": "Sex prediction",
+            "id": "sex_prediction",
             "title": "Sex prediction",
             "namespace": "SampleGender",
         }

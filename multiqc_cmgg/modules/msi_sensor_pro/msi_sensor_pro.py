@@ -68,7 +68,7 @@ class MultiqcModule(BaseMultiqcModule):
         # all table
         self.add_section(
             name="msisensor-pro - All Loci",
-            anchor="msisensor-pro - all loci",
+            anchor="msisensorpro_all_loci",
             description="Detailed MSI status for every loci with the coverage in brackets.",
             plot=table.plot(
                 data=data_dicts_all,
@@ -89,7 +89,7 @@ class MultiqcModule(BaseMultiqcModule):
             # Bargraph configuration
             self.add_section(
                 name="msisensor-pro - Bargraph",
-                anchor="msisensor-pro - Bargraph",
+                anchor="msisensorpro_bargraph",
                 description="This graph visualizes the MSI status per sample in a bargraph.",
                 plot=bargraph.plot(
                     data=msisensorpro_data,
