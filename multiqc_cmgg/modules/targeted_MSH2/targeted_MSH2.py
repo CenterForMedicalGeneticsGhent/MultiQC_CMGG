@@ -98,7 +98,7 @@ class MultiqcModule(BaseMultiqcModule):
         )
 
 
-def parse_file(f: str, config: dict[str, int]) -> Dict[str, Union[float, str]]:
+def parse_file(f: str, config: Dict[str, int]) -> Dict[str, Union[float, str]]:
     """
     Parses a single samplegender TSV file content and returns a dictionary
     with the relevant data from columns 2-6.
