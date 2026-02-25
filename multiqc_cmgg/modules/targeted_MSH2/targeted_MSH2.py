@@ -59,7 +59,7 @@ class MultiqcModule(BaseMultiqcModule):
 
         headers = {
             "MSH2_c.942+3_wt": {
-                "title": "WT reads",
+                "title": "WT readcount",
                 "description": "aantal wild type reads",
                 "scale": "PuBu",
             },
