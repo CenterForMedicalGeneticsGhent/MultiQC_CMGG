@@ -93,6 +93,7 @@ class MultiqcModule(BaseMultiqcModule):
             },
         }
         self.add_section(
+            name="MSH2 Hotspot Variants",
             plot=table.plot(
                 data=MSH2_varcount_data, headers=headers, pconfig=config_table
             ),
