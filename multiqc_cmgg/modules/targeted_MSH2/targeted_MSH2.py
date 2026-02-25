@@ -7,13 +7,6 @@ from typing import Dict, Union
 # Initialise the main MultiQC logger
 log = logging.getLogger("multiqc")
 
-log.info("started targeted_MSH2")
-
-# Get config with defaults
-msh2_config = getattr(config, "targeted_MSH2_config", {"sanger_threshold": 5.0})
-log.info(f"threshold Sanger has been set to {msh2_config.get('sanger_threshold', 5.0)}")
-
-
 class MultiqcModule(BaseMultiqcModule):
     def __init__(self):
         # Initialise the parent module Class object
@@ -21,6 +14,10 @@ class MultiqcModule(BaseMultiqcModule):
             name="targeted_MSH2",
             info="Module om gericht MSH2 hotspot varianten NM_000251.3:c.942+3A>T,c.942+2T>A,c.942+2T>C,c.942+2T>G na te kijken.",
         )
+
+        # Get config with defaults
+        msh2_config = getattr(config, "targeted_MSH2_config", {"sanger_threshold": 28})
+        log.info(f"threshold Sanger has been set to {msh2_config.get('sanger_threshold', 28)}")
 
         # Find and load any input files for this module
         MSH2_varcount_data: Dict[str, Dict[str, Union[float, str]]] = dict()
@@ -30,7 +27,7 @@ class MultiqcModule(BaseMultiqcModule):
             log.info(f"Found file: {f['fn']} with s_name: {f['s_name']}")
             self.add_data_source(f)
             s_name = f["s_name"]
-            parsed = parse_file(f["f"])
+            parsed = parse_file(f["f"], msh2_config)
             if s_name not in MSH2_varcount_data:
                 MSH2_varcount_data[s_name] = parsed
 
@@ -102,7 +99,7 @@ class MultiqcModule(BaseMultiqcModule):
         )
 
 
-def parse_file(f: str) -> Dict[str, Union[float, str]]:
+def parse_file(f: str, config: dict[str, int]) -> Dict[str, Union[float, str]]:
     """
     Parses a single samplegender TSV file content and returns a dictionary
     with the relevant data from columns 2-6.
@@ -131,15 +128,8 @@ def parse_file(f: str) -> Dict[str, Union[float, str]]:
                 * 100,
                 2,
             )
-            # Determining need for sanger according to threshold and adding frequency to parsed_data
-            # Re-fetch config to be safe or pass it.
-            # Since parse_file is outside class, we access config or use default.
-            msh2_config = getattr(
-                config, "targeted_MSH2_config", {"sanger_threshold": 5.0}
-            )
-            threshold = msh2_config.get("sanger_threshold", 5.0)
 
-            if freq >= threshold:
+            if freq >= float(config["sanger_threshold"]):
                 parsed_data[variant] = f"{freq}% ({counts})"
             else:
                 parsed_data[variant] = f"{freq}% ({counts})"
