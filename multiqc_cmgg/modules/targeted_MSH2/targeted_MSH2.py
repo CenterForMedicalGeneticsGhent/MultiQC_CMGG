@@ -54,6 +54,7 @@ class MultiqcModule(BaseMultiqcModule):
             "title": "Targeted: MSH2",
             "sort_rows": True,
             "no_violin": True,
+            "anchor": "targeted-msh2-table",
         }
 
         headers = {
