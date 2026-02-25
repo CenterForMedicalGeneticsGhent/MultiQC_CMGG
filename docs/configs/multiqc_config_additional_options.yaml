@@ -5,7 +5,7 @@ report_comment: "Comment for the report"
 run_modules:
   - sample_gender
   - coverage
-  - MSH2_hotspot_varcount
+  - targeted_MSH2
   - msi_sensor_pro
 
 # Assigning order of columns in tables

@@ -40,7 +40,7 @@ def plugin_execution_start():
     log.debug("CMGG - Updating config")
 
     # Add module to module order
-    modules = ["sample_gender", "coverage", "MSH2_hotspot_varcount", "msi_sensor_pro"]
+    modules = ["sample_gender", "coverage", "targeted_MSH2", "msi_sensor_pro"]
     config.module_order.extend(modules)
     # Move module to the top
     config.top_modules.extend(modules)
@@ -50,7 +50,7 @@ def plugin_execution_start():
         {"sample_gender/hetx": {"fn": "*_hetx.tsv", "shared": False}},
         {"sample_gender/sry": {"fn": "*_sry.tsv", "shared": False}},
         {"coverage/region_dist": {"fn": "*.mosdepth.region.dist.txt", "shared": False}},
-        {"MSH2_hotspot_varcount/counts": {"fn": "*.counts.txt", "shared": False}},
+        {"targeted_MSH2": {"fn": "*.counts.txt", "shared": False}},
         {"msi_sensor_pro/summary": {"fn": "*_summary_msi*", "shared": False}},
         {"msi_sensor_pro/all": {"fn": "*_all_msi*", "shared": False}},
     ]
