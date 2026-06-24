@@ -71,10 +71,10 @@ class MultiqcModule(BaseMultiqcModule):
 
         # summary table - also convert to HTML to avoid violin warnings
         try:
-            # Sort summary data: primary by perc (descending), secondary by low_coverage_sites (ascending)
+            # Sort summary data: primary by low_coverage_sites count (descending), secondary by perc (descending)
             sorted_samples = sorted(
                 data_dicts_summary.items(),
-                key=lambda x: (-x[1].get('perc', 0), x[1].get('low_coverage_sites', 0))
+                key=lambda x: (-x[1].get('low_coverage_sites', 0), -x[1].get('perc', 0))
             )
             
             # Build table with sortable columns
