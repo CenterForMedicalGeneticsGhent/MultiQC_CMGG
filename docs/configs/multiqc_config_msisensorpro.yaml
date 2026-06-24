@@ -12,6 +12,9 @@ table_cond_formatting_rules:
     fail:
       - gt: 30.0
         eq: 30.0
+  low_coverage_sites:
+    warn:
+      - gt: 10
   num_sites:
     warn:
       - lt: 10
@@ -26,6 +29,7 @@ table_cond_formatting_colours:
 
 msi_sensor_pro_coverage_threshold: 300
 msi_sensor_pro_min_sites: 10
+msi_sensor_pro_low_coverage_sites_threshold: 10
 msi_high_threshold: 30
 
 custom_plot_config:
