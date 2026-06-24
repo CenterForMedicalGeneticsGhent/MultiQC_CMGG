@@ -71,10 +71,10 @@ class MultiqcModule(BaseMultiqcModule):
 
         # summary table - also convert to HTML to avoid violin warnings
         try:
-            # Sort summary data: primary by low_coverage_sites count (descending), secondary by perc (descending)
+            # Sort summary data: primary by perc (descending), secondary by low_coverage_sites (ascending)
             sorted_samples = sorted(
                 data_dicts_summary.items(),
-                key=lambda x: (-x[1].get('low_coverage_sites', 0), -x[1].get('perc', 0))
+                key=lambda x: (-x[1].get('perc', 0), x[1].get('low_coverage_sites', 0))
             )
             
             # Build table with sortable columns
@@ -177,10 +177,7 @@ class MultiqcModule(BaseMultiqcModule):
             )
 
         # all table
-        # Write raw all-loci table data explicitly to avoid empty files when
-        # MultiQC merges previous plot input data from other report folders.
         try:
-            # Log basic stats so we can see if data_dicts_all is populated
             try:
                 num_samples = len(data_dicts_all)
                 num_loci = len(headers2)
@@ -200,12 +197,8 @@ class MultiqcModule(BaseMultiqcModule):
         except Exception:
             log.debug("Failed to write explicit all-loci data file", exc_info=True)
 
-        # Create HTML table for all loci (avoid violin plot conversion of text data)
-        # MultiQC's table.plot() internally calls violin.plot() which tries to parse
-        # text values as numbers, causing "All values are NaN or Inf" warnings.
-        # Instead, create a raw HTML table that respects conditional formatting.
+        # Create HTML table for all loci
         try:
-            # Build a simple HTML table
             table_id = "msi-all-loci-table"
             html_parts = [
                 '<style>',
@@ -226,7 +219,6 @@ class MultiqcModule(BaseMultiqcModule):
                 html_parts.append(f'<td>{sample_name}</td>')
                 for locus in sorted(headers2.keys()):
                     status = data_dicts_all[sample_name].get(locus, 'N/A')
-                    # Determine color class based on status
                     css_class = ''
                     if isinstance(status, str):
                         if 'Stable' in status:
@@ -250,7 +242,6 @@ class MultiqcModule(BaseMultiqcModule):
             )
         except Exception as e:
             log.debug(f"Failed to create custom HTML table: {e}", exc_info=True)
-            # Fallback to the standard table.plot if custom HTML fails
             self.add_section(
                 name="msisensor-pro - All Loci",
                 anchor="msisensorpro_all_loci",
@@ -308,25 +299,23 @@ class MultiqcModule(BaseMultiqcModule):
             msisensorpro_score = sample_data["perc"]
             low_cov_sites = sample_data.get("low_coverage_sites", 0)
 
-            # Classify MSI status based on thresholds
-            if low_cov_sites >= self.low_coverage_sites_threshold or sample_data[
-"num_sites"] <= self.min_sites_threshold:
+            if low_cov_sites >= self.low_coverage_sites_threshold or sample_data["num_sites"] <= self.min_sites_threshold:
                 msi_status = "Low-coverage"
-            elif (
-                msisensorpro_score >= self.msi_high_threshold
-            ):  # 30% threshold for MSI-high
+            elif msisensorpro_score >= self.msi_high_threshold:
                 msi_status = "MSI-high"
             else:
                 msi_status = "MSS"
 
-            # Structure data for bargraph - each sample gets assigned to one category
-            display_score = msisensorpro_score
+            display_score = msisensorpro_score  
             if display_score == 0.0:
                 display_score = min_bar
 
             sample_entry = {
                 msi_status: display_score,
             }
+            
+            # TIP: Als MultiQC hierna nog steeds dubbele staalnamen toont, 
+            # kun je de toevoeging '({msi_status})' eventueel weghalen en puur sample_name gebruiken.
             sample_label = f"{sample_name} ({msi_status})"
             msisensorpro_data[sample_label] = sample_entry
             if any(value != 0.0 for value in sample_entry.values()):
@@ -334,22 +323,15 @@ class MultiqcModule(BaseMultiqcModule):
 
         return msisensorpro_data, all_zero
 
-    # Parsing summary file for msiSensorPro
     def normalize_sample_name(self, s_name: str) -> str:
         """
         Normalize sample names for both summary and all files by removing file-specific suffixes.
-        Remove _summary_msi, _all_msi, and .txt extensions if present.
         """
-        # Remove .txt extension first
         normalized = s_name.replace(".txt", "")
-        # Remove _summary_msi or _all_msi suffixes
         normalized = re.sub(r"_(summary|all)_msi$", "", normalized)
-        log.debug(f"Normalized '{s_name}' -> '{normalized}")
         return normalized
 
-    def parse_summary(
-        self,
-    ):
+    def parse_summary(self):
         """
         Parse the msiSensorPro summary file.
         """
@@ -357,9 +339,11 @@ class MultiqcModule(BaseMultiqcModule):
         for f in self.find_log_files(
             "msi_sensor_pro/summary", filecontents=True, filehandles=False
         ):
-            raw_name = self.clean_s_name(f["fn"], f)
-            s_name = self.normalize_sample_name(raw_name)
-            log.debug(f"parse_summary: raw_name='{raw_name}', s_name='{s_name}'")
+            # AANPASSING: Pas eerst de normalisatie toe VOORDAT clean_s_name wordt aangeroepen
+            clean_fn = self.normalize_sample_name(f["fn"])
+            s_name = self.clean_s_name(clean_fn, f)
+            
+            log.debug(f"parse_summary: raw_fn='{f['fn']}', s_name='{s_name}'")
             lines = f["f"].splitlines()
             header = lines[0]
             for line in lines:
@@ -376,9 +360,6 @@ class MultiqcModule(BaseMultiqcModule):
     def annotate_summary_low_coverage(
         self, data_summary: Dict[str, Dict[str, Union[int, float]]], data_all: Dict[str, Dict]
     ) -> None:
-        """
-        Add low-coverage locus counts to the summary table.
-        """
         for sample_name, summary in data_summary.items():
             low_coverage_count = sum(
                 1
@@ -397,15 +378,16 @@ class MultiqcModule(BaseMultiqcModule):
         for f in self.find_log_files(
             "msi_sensor_pro/all", filecontents=True, filehandles=False
         ):
-            raw_name = self.clean_s_name(f["fn"], f)
-            s_name = self.normalize_sample_name(raw_name)
-            log.debug(f"parse_all: raw_name='{raw_name}', s_name='{s_name}'")
+            # AANPASSING: Pas eerst de normalisatie toe VOORDAT clean_s_name wordt aangeroepen
+            clean_fn = self.normalize_sample_name(f["fn"])
+            s_name = self.clean_s_name(clean_fn, f)
+            
+            log.debug(f"parse_all: raw_fn='{f['fn']}', s_name='{s_name}'")
             lines = f["f"].splitlines()
             
-            # Ensure sample is present even if file only contains header
             sample_data.setdefault(s_name, {})
             
-            for line in lines[1:]:  # Skip header
+            for line in lines[1:]:
                 parts = line.strip().split("\t")
                 if len(parts) < 10:
                     log.warning(
@@ -420,7 +402,6 @@ class MultiqcModule(BaseMultiqcModule):
                 coverage = int(parts[8])
                 threshold = float(parts[9])
 
-                # Classify MSI status
                 if pro_p > threshold:
                     status = f"Unstable ({coverage})"
                 elif coverage < self.coverage_threshold:
