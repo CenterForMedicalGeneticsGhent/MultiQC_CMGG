@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""MultiQC example plugin functions
+"""MultiQC CMGG plugin functions
 
 We can add any custom Python functions here and call them
 using the setuptools plugin hooks.
@@ -26,7 +26,7 @@ def plugin_execution_start():
 
     # Plugin's version number defined in pyproject.toml:
     version = importlib_metadata.version("multiqc_cmgg")
-    log.info(f"Running Example MultiQC Plugin v{version}")
+    log.info(f"Running CMGG MultiQC Plugin v{version}")
 
     # Add to the main MultiQC config object.
     # User config files have already been loaded at this point
