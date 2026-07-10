@@ -137,7 +137,7 @@ class MultiqcModule(BaseMultiqcModule):
                     data=msisensorpro_data,
                     cats=categories,
                     pconfig={
-                        "id": "msiSensorPro_bargraph_v2",
+                        "id": "msiSensorPro_bargraph",
                         "title": "MSI Sensor Pro Summary",
                         "ylab": "Percentage of unstable sites",
                         "ymin": 0,
