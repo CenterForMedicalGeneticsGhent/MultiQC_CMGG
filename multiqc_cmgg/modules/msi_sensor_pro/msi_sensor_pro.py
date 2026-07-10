@@ -275,7 +275,7 @@ class MultiqcModule(BaseMultiqcModule):
                     data=msisensorpro_data,
                     cats=categories,
                     pconfig={
-                        "id": "msiSensorPro_bargraph",
+                        "id": "msiSensorPro_bargraph_v2",
                         "title": "MSI Sensor Pro Summary",
                         "ylab": "Percentage of unstable sites",
                         "ymin": 0,
@@ -314,8 +314,6 @@ class MultiqcModule(BaseMultiqcModule):
                 msi_status: display_score,
             }
             
-            # TIP: Als MultiQC hierna nog steeds dubbele staalnamen toont, 
-            # kun je de toevoeging '({msi_status})' eventueel weghalen en puur sample_name gebruiken.
             sample_label = f"{sample_name} ({msi_status})"
             msisensorpro_data[sample_label] = sample_entry
             if any(value != 0.0 for value in sample_entry.values()):
@@ -339,11 +337,10 @@ class MultiqcModule(BaseMultiqcModule):
         for f in self.find_log_files(
             "msi_sensor_pro/summary", filecontents=True, filehandles=False
         ):
-            # AANPASSING: Pas eerst de normalisatie toe VOORDAT clean_s_name wordt aangeroepen
-            clean_fn = self.normalize_sample_name(f["fn"])
-            s_name = self.clean_s_name(clean_fn, f)
+            raw_name = self.clean_s_name(f["fn"], f)
+            s_name = self.normalize_sample_name(raw_name)
             
-            log.debug(f"parse_summary: raw_fn='{f['fn']}', s_name='{s_name}'")
+            log.debug(f"parse_summary: raw_fn='{f['fn']}', raw_name='{raw_name}', s_name='{s_name}'")
             lines = f["f"].splitlines()
             header = lines[0]
             for line in lines:
@@ -378,11 +375,10 @@ class MultiqcModule(BaseMultiqcModule):
         for f in self.find_log_files(
             "msi_sensor_pro/all", filecontents=True, filehandles=False
         ):
-            # AANPASSING: Pas eerst de normalisatie toe VOORDAT clean_s_name wordt aangeroepen
-            clean_fn = self.normalize_sample_name(f["fn"])
-            s_name = self.clean_s_name(clean_fn, f)
+            raw_name = self.clean_s_name(f["fn"], f)
+            s_name = self.normalize_sample_name(raw_name)
             
-            log.debug(f"parse_all: raw_fn='{f['fn']}', s_name='{s_name}'")
+            log.debug(f"parse_all: raw_fn='{f['fn']}', raw_name='{raw_name}', s_name='{s_name}'")
             lines = f["f"].splitlines()
             
             sample_data.setdefault(s_name, {})
