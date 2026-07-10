@@ -1,11 +1,11 @@
 import logging
+import re
 from collections import defaultdict
 from multiqc import config
-from multiqc.base_module import BaseMultiqcModule, ModuleNoSamplesFound
-from multiqc.utils.util_functions import update_dict
+from multiqc.base_module import BaseMultiqcModule
+from multiqc import report
 from multiqc.plots import table, bargraph
-from typing import Dict, Union, List, Optional
-from collections import OrderedDict
+from typing import Dict, Union
 
 log = logging.getLogger(__name__)
 
@@ -24,28 +24,58 @@ class MultiqcModule(BaseMultiqcModule):
         )
         self.min_sites_threshold = getattr(config, "msi_sensor_pro_min_sites", 30)
         self.msi_high_threshold = getattr(config, "msi_high_threshold", 30.0)
+        self.low_coverage_sites_threshold = getattr(
+            config, "msi_sensor_pro_low_coverage_sites_threshold", 10
+        )
 
         # Parsing and loading data from msiSensorPro summary and all files
         data_dicts_summary = self.parse_summary()
+        log.debug(f"Summary samples: {list(data_dicts_summary.keys())}")
         data_dicts_all = self.parse_all()
+        log.debug(f"All-loci samples: {list(data_dicts_all.keys())}")
+        self.annotate_summary_low_coverage(data_dicts_summary, data_dicts_all)
         msisensorpro_data, all_zero = self.prepare_msisensorpro_data(data_dicts_summary)
 
-        # Table configuration
-        config_table = {
-            "id": "msi_summary",
-            "title": "msi_summary",
-        }
+        sorted_summary = dict(
+            sorted(
+                data_dicts_summary.items(),
+                key=lambda item: (
+                    -item[1].get("perc", 0),
+                    item[1].get("low_coverage_sites", 0),
+                ),
+            )
+        )
+
         headers = {
             "num_sites": {
                 "title": "Number of sites",
+                "cond_formatting_rules": {
+                    "low": [{"n_le": self.min_sites_threshold}]
+                },
+                "cond_formatting_colours": [{"low": "#f39c12"}],
             },
             "num_unstable_sites": {
                 "title": "Number of unstable sites",
+            },
+            "low_coverage_sites": {
+                "title": "Number of low-coverage sites",
+                "cond_formatting_rules": {
+                    "high": [{"n_gt": self.low_coverage_sites_threshold}]
+                },
+                "cond_formatting_colours": [{"high": "#f39c12"}],
             },
             "perc": {
                 "title": "Percentage of unstable sites",
                 "format": "{:.2f}",
                 "suffix": "%",
+                "cond_formatting_rules": {
+                    "high": [{"n_ge": self.msi_high_threshold}],
+                    "normal": [{"n_lt": self.msi_high_threshold}],
+                },
+                "cond_formatting_colours": [
+                    {"high": "#e74c3c"},
+                    {"normal": "#d4edda"},
+                ],
             },
         }
 
@@ -58,14 +88,22 @@ class MultiqcModule(BaseMultiqcModule):
         for locus in sorted(all_loci):
             headers2[locus] = {"title": locus, "description": f"MSI status at {locus}"}
 
-        # summary table
         self.add_section(
             plot=table.plot(
-                data=data_dicts_summary, headers=headers, pconfig=config_table
+                data=sorted_summary,
+                headers=headers,
+                pconfig={
+                    "id": "msi_summary",
+                    "title": "msi_summary",
+                    "no_violin": True,
+                },
             ),
         )
 
         # all table
+        self.log_all_loci_stats(data_dicts_all, headers2)
+        self.write_all_loci_data_files(data_dicts_all)
+
         self.add_section(
             name="msisensor-pro - All Loci",
             anchor="msisensorpro_all_loci",
@@ -76,6 +114,10 @@ class MultiqcModule(BaseMultiqcModule):
                 pconfig={
                     "id": "msiSensorPro_all_table",
                     "title": "msiSensorPro - All Site Metrics",
+                    "no_violin": True,
+                    "parse_numeric": False,
+                    "save_file": True,
+                    "save_data_file": True,
                 },
             ),
         )
@@ -107,6 +149,22 @@ class MultiqcModule(BaseMultiqcModule):
         else:
             log.info("Skipping bargraph: All samples have 0% unstable sites")
 
+    def log_all_loci_stats(self, data_dicts_all, headers2):
+        num_samples = len(data_dicts_all)
+        num_loci = len(headers2)
+        total_cells = sum(len(v) for v in data_dicts_all.values())
+        log.info(
+            f"Writing all-loci data: samples={num_samples}, loci={num_loci}, cells={total_cells}"
+        )
+
+    def write_all_loci_data_files(self, data_dicts_all):
+        self.write_data_file(data_dicts_all, "msiSensorPro_all_table")
+        report.write_data_file(
+            data_dicts_all,
+            "msiSensorPro_all_table_json",
+            data_format="json",
+        )
+
     def prepare_msisensorpro_data(self, data_summary):
         """
         Transform summary data to msisensorpro score with MSI classification
@@ -117,25 +175,23 @@ class MultiqcModule(BaseMultiqcModule):
 
         for sample_name, sample_data in data_summary.items():
             msisensorpro_score = sample_data["perc"]
+            low_cov_sites = sample_data.get("low_coverage_sites", 0)
 
-            # Classify MSI status based on thresholds
-            if sample_data["num_sites"] <= self.min_sites_threshold:
+            if low_cov_sites >= self.low_coverage_sites_threshold or sample_data["num_sites"] <= self.min_sites_threshold:
                 msi_status = "Low-coverage"
-            elif (
-                msisensorpro_score >= self.msi_high_threshold
-            ):  # 30% threshold for MSI-high
+            elif msisensorpro_score >= self.msi_high_threshold:
                 msi_status = "MSI-high"
             else:
                 msi_status = "MSS"
 
-            # Structure data for bargraph - each sample gets assigned to one category
-            display_score = msisensorpro_score
+            display_score = msisensorpro_score  
             if display_score == 0.0:
                 display_score = min_bar
 
             sample_entry = {
                 msi_status: display_score,
             }
+            
             sample_label = f"{sample_name} ({msi_status})"
             msisensorpro_data[sample_label] = sample_entry
             if any(value != 0.0 for value in sample_entry.values()):
@@ -143,10 +199,15 @@ class MultiqcModule(BaseMultiqcModule):
 
         return msisensorpro_data, all_zero
 
-    # Parsing summary file for msiSensorPro
-    def parse_summary(
-        self,
-    ):
+    def normalize_sample_name(self, s_name: str) -> str:
+        """
+        Normalize sample names for both summary and all files by removing file-specific suffixes.
+        """
+        normalized = s_name.replace(".txt", "")
+        normalized = re.sub(r"_(summary|all)_msi$", "", normalized)
+        return normalized
+
+    def parse_summary(self):
         """
         Parse the msiSensorPro summary file.
         """
@@ -154,7 +215,9 @@ class MultiqcModule(BaseMultiqcModule):
         for f in self.find_log_files(
             "msi_sensor_pro/summary", filecontents=True, filehandles=False
         ):
-            s_name = self.clean_s_name(f["fn"], f)
+            raw_name = self.clean_s_name(f["fn"], f)
+            s_name = self.normalize_sample_name(raw_name)
+            
             lines = f["f"].splitlines()
             header = lines[0]
             for line in lines:
@@ -165,8 +228,18 @@ class MultiqcModule(BaseMultiqcModule):
                         "num_unstable_sites": int(num_unstable_sites),
                         "perc": float(perc),
                     }
-            log.info(data_summary)
         return data_summary
+
+    def annotate_summary_low_coverage(
+        self, data_summary: Dict[str, Dict[str, Union[int, float]]], data_all: Dict[str, Dict]
+    ) -> None:
+        for sample_name, summary in data_summary.items():
+            low_coverage_count = sum(
+                1
+                for status in data_all.get(sample_name, {}).values()
+                if isinstance(status, str) and status.startswith("Low-coverage")
+            )
+            summary["low_coverage_sites"] = low_coverage_count
 
     def parse_all(self) -> Dict[str, Dict]:
         """
@@ -178,13 +251,14 @@ class MultiqcModule(BaseMultiqcModule):
         for f in self.find_log_files(
             "msi_sensor_pro/all", filecontents=True, filehandles=False
         ):
-            s_name = self.clean_s_name(f["fn"], f)
+            raw_name = self.clean_s_name(f["fn"], f)
+            s_name = self.normalize_sample_name(raw_name)
+            
             lines = f["f"].splitlines()
             
-            # Ensure sample is present even if file only contains header
             sample_data.setdefault(s_name, {})
             
-            for line in lines[1:]:  # Skip header
+            for line in lines[1:]:
                 parts = line.strip().split("\t")
                 if len(parts) < 10:
                     log.warning(
@@ -199,11 +273,10 @@ class MultiqcModule(BaseMultiqcModule):
                 coverage = int(parts[8])
                 threshold = float(parts[9])
 
-                # Classify MSI status
-                if pro_p > threshold:
-                    status = f"Unstable ({coverage})"
-                elif coverage < self.coverage_threshold:
+                if coverage < self.coverage_threshold:
                     status = f"Low-coverage ({coverage})"
+                elif pro_p > threshold:
+                    status = f"Unstable ({coverage})"
                 else:
                     status = f"Stable ({coverage})"
 
