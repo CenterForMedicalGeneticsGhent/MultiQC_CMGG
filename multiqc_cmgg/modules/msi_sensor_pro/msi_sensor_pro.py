@@ -104,45 +104,9 @@ class MultiqcModule(BaseMultiqcModule):
                 html_parts.append('<tr>')
                 html_parts.append(f'<td>{escape(str(sample_name))}</td>')
                 for col_key in headers.keys():
-                    value = sample_data.get(col_key, '')
-                    # Apply formatting and conditional colors
-                    if col_key == 'perc':
-                        try:
-                            val = float(value)
-                            css_class = ''
-                            if val >= self.msi_high_threshold:
-                                css_class = 'class="bg-danger"'  # Red for high percentage
-                            else:
-                                css_class = 'class="bg-light-success"'  # Light green for normal
-                            html_parts.append(
-                                f'<td {css_class}>{escape(f"{value:.2f}%")}</td>'
-                            )
-                        except (TypeError, ValueError):
-                            html_parts.append(f'<td>{escape(str(value))}</td>')
-                    elif col_key == 'low_coverage_sites':
-                        try:
-                            val = int(value)
-                            css_class = ''
-                            if val > self.low_coverage_sites_threshold:
-                                css_class = 'class="bg-warning"'  # Orange for high
-                            html_parts.append(
-                                f'<td {css_class}>{escape(str(value))}</td>'
-                            )
-                        except (TypeError, ValueError):
-                            html_parts.append(f'<td>{escape(str(value))}</td>')
-                    elif col_key == 'num_sites':
-                        try:
-                            val = int(value)
-                            css_class = ''
-                            if val <= self.min_sites_threshold:
-                                css_class = 'class="bg-warning"'  # Orange for low
-                            html_parts.append(
-                                f'<td {css_class}>{escape(str(value))}</td>'
-                            )
-                        except (TypeError, ValueError):
-                            html_parts.append(f'<td>{escape(str(value))}</td>')
-                    else:
-                        html_parts.append(f'<td>{escape(str(value))}</td>')
+                    html_parts.append(
+                        self.render_summary_cell(col_key, sample_data.get(col_key, ''))
+                    )
                 html_parts.append('</tr>')
             html_parts.append('</tbody></table>')
             
@@ -185,25 +149,8 @@ class MultiqcModule(BaseMultiqcModule):
             )
 
         # all table
-        try:
-            try:
-                num_samples = len(data_dicts_all)
-                num_loci = len(headers2)
-                total_cells = sum(len(v) for v in data_dicts_all.values())
-                log.info(f"Writing all-loci data: samples={num_samples}, loci={num_loci}, cells={total_cells}")
-            except Exception:
-                log.debug("Failed to compute all-loci stats", exc_info=True)
-
-            # Write raw TSV using BaseModule method so MultiQC tracks it
-            self.write_data_file(data_dicts_all, "msiSensorPro_all_table")
-
-            # Also write JSON as backup
-            try:
-                report.write_data_file(data_dicts_all, "msiSensorPro_all_table_json", data_format="json")
-            except Exception:
-                log.debug("Failed to write all-loci JSON data file", exc_info=True)
-        except Exception:
-            log.debug("Failed to write explicit all-loci data file", exc_info=True)
+        self.log_all_loci_stats(data_dicts_all, headers2)
+        self.write_all_loci_data_files(data_dicts_all)
 
         # Create HTML table for all loci
         try:
@@ -227,14 +174,7 @@ class MultiqcModule(BaseMultiqcModule):
                 html_parts.append(f'<td>{escape(str(sample_name))}</td>')
                 for locus in sorted(headers2.keys()):
                     status = data_dicts_all[sample_name].get(locus, 'N/A')
-                    css_class = ''
-                    if isinstance(status, str):
-                        if 'Stable' in status:
-                            css_class = 'class="bg-light-success"'  # Light green
-                        elif 'Unstable' in status:
-                            css_class = 'class="bg-danger"'   # Red
-                        elif 'Low-coverage' in status:
-                            css_class = 'class="bg-warning"'  # Orange
+                    css_class = self.get_all_loci_status_class(status)
                     html_parts.append(
                         f'<td {css_class}>{escape(str(status))}</td>'
                     )
@@ -296,6 +236,85 @@ class MultiqcModule(BaseMultiqcModule):
             )
         else:
             log.info("Skipping bargraph: All samples have 0% unstable sites")
+
+    def render_summary_cell(self, col_key, value):
+        css_class, display_value = self.get_summary_cell_presentation(col_key, value)
+        return f'<td {css_class}>{escape(display_value)}</td>'
+
+    def get_summary_cell_presentation(self, col_key, value):
+        css_class = ''
+        display_value = str(value)
+
+        if col_key == 'perc':
+            try:
+                numeric_value = float(value)
+            except (TypeError, ValueError):
+                return css_class, display_value
+
+            if numeric_value >= self.msi_high_threshold:
+                css_class = 'class="bg-danger"'
+            else:
+                css_class = 'class="bg-light-success"'
+            return css_class, f"{numeric_value:.2f}%"
+
+        if col_key == 'low_coverage_sites':
+            try:
+                numeric_value = int(value)
+            except (TypeError, ValueError):
+                return css_class, display_value
+
+            if numeric_value > self.low_coverage_sites_threshold:
+                css_class = 'class="bg-warning"'
+            return css_class, str(value)
+
+        if col_key == 'num_sites':
+            try:
+                numeric_value = int(value)
+            except (TypeError, ValueError):
+                return css_class, display_value
+
+            if numeric_value <= self.min_sites_threshold:
+                css_class = 'class="bg-warning"'
+
+        return css_class, str(value)
+
+    def log_all_loci_stats(self, data_dicts_all, headers2):
+        try:
+            num_samples = len(data_dicts_all)
+            num_loci = len(headers2)
+            total_cells = sum(len(v) for v in data_dicts_all.values())
+            log.info(
+                f"Writing all-loci data: samples={num_samples}, loci={num_loci}, cells={total_cells}"
+            )
+        except Exception:
+            log.debug("Failed to compute all-loci stats", exc_info=True)
+
+    def write_all_loci_data_files(self, data_dicts_all):
+        try:
+            self.write_data_file(data_dicts_all, "msiSensorPro_all_table")
+        except Exception:
+            log.debug("Failed to write explicit all-loci data file", exc_info=True)
+
+        try:
+            report.write_data_file(
+                data_dicts_all,
+                "msiSensorPro_all_table_json",
+                data_format="json",
+            )
+        except Exception:
+            log.debug("Failed to write all-loci JSON data file", exc_info=True)
+
+    def get_all_loci_status_class(self, status):
+        if not isinstance(status, str):
+            return ''
+
+        if 'Stable' in status:
+            return 'class="bg-light-success"'
+        if 'Unstable' in status:
+            return 'class="bg-danger"'
+        if 'Low-coverage' in status:
+            return 'class="bg-warning"'
+        return ''
 
     def prepare_msisensorpro_data(self, data_summary):
         """
