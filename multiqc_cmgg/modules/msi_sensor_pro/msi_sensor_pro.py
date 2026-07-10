@@ -1,6 +1,7 @@
 import logging
 import re
 from collections import defaultdict
+from html import escape
 from multiqc import config
 from multiqc.base_module import BaseMultiqcModule, ModuleNoSamplesFound
 from multiqc import report
@@ -80,26 +81,28 @@ class MultiqcModule(BaseMultiqcModule):
             # Build table with sortable columns
             table_id = "msi-summary-table"
             html_parts = [
-                f'<style>',
-                f'  .bg-light-success {{ background-color: #d4edda !important; }}',
-                f'  .sortable {{ cursor: pointer; user-select: none; }}',
-                f'  .sortable::after {{ content: " ⇅"; font-size: 0.8em; opacity: 0.5; }}',
-                f'</style>',
+                '<style>',
+                '  .bg-light-success { background-color: #d4edda !important; }',
+                '  .sortable { cursor: pointer; user-select: none; }',
+                '  .sortable::after { content: " ⇅"; font-size: 0.8em; opacity: 0.5; }',
+                '</style>',
                 f'<table id="{table_id}" class="table table-striped table-hover">',
-                f'<thead><tr>',
+                '<thead><tr>',
                 f'  <th class="sortable" onclick="sortTable(\'{table_id}\', 0)">Sample</th>'
                 ]
             
             # Header row with sortable columns
             for idx, (col_key, col_info) in enumerate(headers.items(), start=1):
                 title = col_info.get('title', col_key)
-                html_parts.append(f'  <th class="sortable" onclick="sortTable(\'{table_id}\', {idx})">{title}</th>')
+                html_parts.append(
+                    f'  <th class="sortable" onclick="sortTable(\'{table_id}\', {idx})">{escape(str(title))}</th>'
+                )
             html_parts.append('</tr></thead><tbody>')
             
             # Data rows (already sorted)
             for sample_name, sample_data in sorted_samples:
                 html_parts.append('<tr>')
-                html_parts.append(f'<td>{sample_name}</td>')
+                html_parts.append(f'<td>{escape(str(sample_name))}</td>')
                 for col_key in headers.keys():
                     value = sample_data.get(col_key, '')
                     # Apply formatting and conditional colors
@@ -111,29 +114,35 @@ class MultiqcModule(BaseMultiqcModule):
                                 css_class = 'class="bg-danger"'  # Red for high percentage
                             else:
                                 css_class = 'class="bg-light-success"'  # Light green for normal
-                            html_parts.append(f'<td {css_class}>{value:.2f}%</td>')
-                        except:
-                            html_parts.append(f'<td>{value}</td>')
+                            html_parts.append(
+                                f'<td {css_class}>{escape(f"{value:.2f}%")}</td>'
+                            )
+                        except (TypeError, ValueError):
+                            html_parts.append(f'<td>{escape(str(value))}</td>')
                     elif col_key == 'low_coverage_sites':
                         try:
                             val = int(value)
                             css_class = ''
                             if val > self.low_coverage_sites_threshold:
                                 css_class = 'class="bg-warning"'  # Orange for high
-                            html_parts.append(f'<td {css_class}>{value}</td>')
-                        except:
-                            html_parts.append(f'<td>{value}</td>')
+                            html_parts.append(
+                                f'<td {css_class}>{escape(str(value))}</td>'
+                            )
+                        except (TypeError, ValueError):
+                            html_parts.append(f'<td>{escape(str(value))}</td>')
                     elif col_key == 'num_sites':
                         try:
                             val = int(value)
                             css_class = ''
                             if val <= self.min_sites_threshold:
                                 css_class = 'class="bg-warning"'  # Orange for low
-                            html_parts.append(f'<td {css_class}>{value}</td>')
-                        except:
-                            html_parts.append(f'<td>{value}</td>')
+                            html_parts.append(
+                                f'<td {css_class}>{escape(str(value))}</td>'
+                            )
+                        except (TypeError, ValueError):
+                            html_parts.append(f'<td>{escape(str(value))}</td>')
                     else:
-                        html_parts.append(f'<td>{value}</td>')
+                        html_parts.append(f'<td>{escape(str(value))}</td>')
                 html_parts.append('</tr>')
             html_parts.append('</tbody></table>')
             
@@ -208,14 +217,14 @@ class MultiqcModule(BaseMultiqcModule):
             ]
             
             for locus in sorted(headers2.keys()):
-                html_parts.append(f'<th>{locus}</th>')
+                html_parts.append(f'<th>{escape(str(locus))}</th>')
             html_parts.append('</tr></thead>')
             
             # Data rows
             html_parts.append('<tbody>')
             for sample_name in sorted(data_dicts_all.keys()):
                 html_parts.append('<tr>')
-                html_parts.append(f'<td>{sample_name}</td>')
+                html_parts.append(f'<td>{escape(str(sample_name))}</td>')
                 for locus in sorted(headers2.keys()):
                     status = data_dicts_all[sample_name].get(locus, 'N/A')
                     css_class = ''
@@ -226,7 +235,9 @@ class MultiqcModule(BaseMultiqcModule):
                             css_class = 'class="bg-danger"'   # Red
                         elif 'Low-coverage' in status:
                             css_class = 'class="bg-warning"'  # Orange
-                    html_parts.append(f'<td {css_class}>{status}</td>')
+                    html_parts.append(
+                        f'<td {css_class}>{escape(str(status))}</td>'
+                    )
                 html_parts.append('</tr>')
             html_parts.append('</tbody>')
             html_parts.append('</table>')
