@@ -30,9 +30,9 @@ class MultiqcModule(BaseMultiqcModule):
 
         # Parsing and loading data from msiSensorPro summary and all files
         data_dicts_summary = self.parse_summary()
-        log.info(f"Summary samples: {list(data_dicts_summary.keys())}")
+        log.debug(f"Summary samples: {list(data_dicts_summary.keys())}")
         data_dicts_all = self.parse_all()
-        log.info(f"All-loci samples: {list(data_dicts_all.keys())}")
+        log.debug(f"All-loci samples: {list(data_dicts_all.keys())}")
         self.annotate_summary_low_coverage(data_dicts_summary, data_dicts_all)
         msisensorpro_data, all_zero = self.prepare_msisensorpro_data(data_dicts_summary)
 
