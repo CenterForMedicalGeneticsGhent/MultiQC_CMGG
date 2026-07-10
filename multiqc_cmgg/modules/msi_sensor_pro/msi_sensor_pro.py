@@ -3,12 +3,10 @@ import re
 from collections import defaultdict
 from html import escape
 from multiqc import config
-from multiqc.base_module import BaseMultiqcModule, ModuleNoSamplesFound
+from multiqc.base_module import BaseMultiqcModule
 from multiqc import report
-from multiqc.utils.util_functions import update_dict
 from multiqc.plots import table, bargraph
-from typing import Dict, Union, List, Optional
-from collections import OrderedDict
+from typing import Dict, Union
 
 log = logging.getLogger(__name__)
 
