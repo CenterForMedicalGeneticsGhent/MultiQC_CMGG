@@ -88,7 +88,7 @@ class MultiqcModule(BaseMultiqcModule):
                 f'<table id="{table_id}" class="table table-striped table-hover">',
                 f'<thead><tr>',
                 f'  <th class="sortable" onclick="sortTable(\'{table_id}\', 0)">Sample</th>'
-            ]
+                ]
             
             # Header row with sortable columns
             for idx, (col_key, col_info) in enumerate(headers.items(), start=1):
@@ -146,7 +146,6 @@ class MultiqcModule(BaseMultiqcModule):
                 const rows = Array.from(tbody.querySelectorAll('tr'));
                 
                 const isNumeric = (str) => !isNaN(parseFloat(str)) && isFinite(str);
-                
                 rows.sort((a, b) => {
                     const aCell = a.cells[columnIdx].textContent.trim();
                     const bCell = b.cells[columnIdx].textContent.trim();
@@ -351,7 +350,6 @@ class MultiqcModule(BaseMultiqcModule):
                         "num_unstable_sites": int(num_unstable_sites),
                         "perc": float(perc),
                     }
-            log.info(data_summary)
         return data_summary
 
     def annotate_summary_low_coverage(
@@ -398,10 +396,10 @@ class MultiqcModule(BaseMultiqcModule):
                 coverage = int(parts[8])
                 threshold = float(parts[9])
 
-                if pro_p > threshold:
-                    status = f"Unstable ({coverage})"
-                elif coverage < self.coverage_threshold:
+                if coverage < self.coverage_threshold:
                     status = f"Low-coverage ({coverage})"
+                elif pro_p > threshold:
+                    status = f"Unstable ({coverage})"
                 else:
                     status = f"Stable ({coverage})"
 
