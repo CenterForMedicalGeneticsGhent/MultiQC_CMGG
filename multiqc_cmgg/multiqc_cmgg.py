@@ -40,7 +40,7 @@ def plugin_execution_start():
     log.debug("CMGG - Updating config")
 
     # Add module to module order
-    modules = ["sample_gender", "coverage", "targeted_MSH2", "msi_sensor_pro"]
+    modules = ["sample_gender", "coverage", "targeted_MSH2", "msi_sensor_pro", "cnvs_exomedepth"]
     config.module_order.extend(modules)
     # Move module to the top
     config.top_modules.extend(modules)
@@ -53,6 +53,8 @@ def plugin_execution_start():
         {"targeted_MSH2": {"fn": "*.counts.txt", "shared": False}},
         {"msi_sensor_pro/summary": {"fn": "*_summary_msi*", "shared": False}},
         {"msi_sensor_pro/all": {"fn": "*_all_msi*", "shared": False}},
+        {"cnvs_exomedepth/panels": {"fn": "cnvs_exomedepth_panels_summary.tsv", "shared": False}},
+        {"cnvs_exomedepth/designs": {"fn": "cnvs_exomedepth_designs_summary.tsv", "shared": False}},
     ]
 
     for pattern in search_patterns:
