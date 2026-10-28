@@ -84,7 +84,7 @@ def natural_sort_key(s: str) -> List[Union[int, str]]:
 def format_patient_panel_desc(panels_dict: Dict[str, int]) -> str:
     """Format panel CNV counts for display, e.g. 'panel1: 1, panel2: geen CNVs'."""
     if not panels_dict:
-        return "geen panel CNVs"
+        return "no panel CNVs"
     parts = []
     for panel, cnt in panels_dict.items():
         if cnt == 1:
