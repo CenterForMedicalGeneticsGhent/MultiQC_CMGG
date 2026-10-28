@@ -30,7 +30,6 @@ def parse_tsv(content: str) -> Tuple[List[str], List[Dict[str, str]]]:
 
 def is_cnv_row(row: Dict[str, str]) -> bool:
     """Check whether a row represents an actual CNV call or a placeholder.
-
     When no CNVs are detected for a patient, a placeholder row is present with
     'Patient', 'Panel', and/or 'Design' filled in, but 'NA' for all CNV call columns
     (such as Type, Region, Reads.ratio, etc.).
@@ -82,7 +81,7 @@ def natural_sort_key(s: str) -> List[Union[int, str]]:
 
 
 def format_patient_panel_desc(panels_dict: Dict[str, int]) -> str:
-    """Format panel CNV counts for display, e.g. 'panel1: 1, panel2: geen CNVs'."""
+    """Format panel CNV counts for display, e.g. 'panel1: 1 CNV, panel2: no CNVs'."""
     if not panels_dict:
         return "no panel CNVs"
     parts = []
@@ -92,7 +91,7 @@ def format_patient_panel_desc(panels_dict: Dict[str, int]) -> str:
         elif cnt > 1:
             parts.append(f"{panel}: {cnt} CNVs")
         else:
-            parts.append(f"{panel}: geen CNVs")
+            parts.append(f"{panel}: no CNVs")
     return ", ".join(parts)
 
 
@@ -149,7 +148,7 @@ def build_patient_filter_html(patient_summary: Dict[str, Dict[str, Any]]) -> str
         }
     )
 
-    options = [f'<option value="">-- Toon alle stalen ({total_patients}) --</option>']
+    options = [f'<option value="">-- Show all samples ({total_patients}) --</option>']
     pills = []
 
     for p, s in patient_summary.items():
@@ -167,14 +166,14 @@ def build_patient_filter_html(patient_summary: Dict[str, Dict[str, Any]]) -> str
     options_html = "\n        ".join(options)
     pills_html = "\n      ".join(pills)
     header_count_text = (
-        f"{total_patients} stalen geanalyseerd, {patients_with_panel_cnvs} met panel CNVs"
+        f"{total_patients} samples, {patients_with_panel_cnvs} with panel CNVs"
     )
 
     return f"""
 <div class="card ed-patient-filter-card mb-3 shadow-sm">
   <div class="card-header bg-body-tertiary d-flex justify-content-between align-items-center py-2 flex-wrap gap-2">
     <div>
-      <strong class="me-2">Patiënten Filter</strong>
+      <strong class="me-2">Patient filter</strong>
       <span class="text-muted small">({header_count_text})</span>
     </div>
     <div class="d-flex align-items-center gap-2">
@@ -182,22 +181,22 @@ def build_patient_filter_html(patient_summary: Dict[str, Dict[str, Any]]) -> str
         {options_html}
       </select>
       <button type="button" class="btn btn-outline-secondary btn-sm" id="ed-reset-filter-btn" style="display: none;">
-        Toon alle stalen
+        Show all samples
       </button>
     </div>
   </div>
   <div class="card-body py-2">
     <div id="ed-active-filter-alert" class="alert alert-primary py-2 px-3 mb-2 d-flex justify-content-between align-items-center" style="display: none;">
       <div>
-        <span class="badge bg-primary me-2">Gefilterd staal</span>
+        <span class="badge bg-primary me-2">Filtered sample</span>
         <strong id="ed-active-patient-name" class="fs-6"></strong>
         <span id="ed-active-patient-counts" class="ms-2 text-muted small"></span>
       </div>
       <button type="button" class="btn btn-sm btn-outline-primary" id="ed-clear-filter-btn">
-        ✕ Toon alle stalen
+        ✕ Show all samples
       </button>
     </div>
-    <div class="small text-muted mb-1">Klik op een patiëntnaam om de tabellen te filteren:</div>
+    <div class="small text-muted mb-1">Click on patient name to filter the tables:</div>
     <div class="ed-patient-pills-container d-flex flex-wrap gap-1 p-1" style="max-height: 180px; overflow-y: auto;">
       {pills_html}
     </div>
@@ -293,7 +292,7 @@ function setExomeDepthPatientFilter(selectedPatient) {{
         var cols = $('#cnvs_exomedepth_panels_table_table thead th').length || 15;
         $('#cnvs_exomedepth_panels_table_table tbody').append(
             '<tr id="cnvs_exomedepth_panels_no_data" class="ed-no-data-row"><td colspan="' + cols + '" class="text-center text-muted fst-italic py-3">' +
-            'Geen Panel CNVs gevonden voor staal <strong>' + selectedPatient + '</strong>.</td></tr>'
+            'No Panel CNVs found for sample <strong>' + selectedPatient + '</strong>.</td></tr>'
         );
     }}
 
@@ -320,7 +319,7 @@ function setExomeDepthPatientFilter(selectedPatient) {{
         var cols = $('#cnvs_exomedepth_designs_table_table thead th').length || 15;
         $('#cnvs_exomedepth_designs_table_table tbody').append(
             '<tr id="cnvs_exomedepth_designs_no_data" class="ed-no-data-row"><td colspan="' + cols + '" class="text-center text-muted fst-italic py-3">' +
-            'Geen Design CNVs gevonden voor staal <strong>' + selectedPatient + '</strong>.</td></tr>'
+            'No Design CNVs found for sample <strong>' + selectedPatient + '</strong>.</td></tr>'
         );
     }}
 
@@ -343,7 +342,7 @@ $(function() {{
     // Attach tooltips to table headers
     setTimeout(function() {{
         $('#cnvs_exomedepth_panels_table_table tbody th.rowheader, #cnvs_exomedepth_designs_table_table tbody th.rowheader')
-            .attr('title', 'Klik om te filteren op dit staal');
+            .attr('title', 'Click to filter by this sample');
     }}, 500);
 
     // Pill click handler (toggle if already active)
@@ -402,10 +401,10 @@ $(function() {{
 # always hits the <td> and never the inner text where a title attribute would live).
 READS_RATIO_LEGEND = (
     "Reads.ratio colour legend - predicted cnv  type: "
-    '<span class="badge" style="background-color:rgb(128,0,0)">&lt; 0.2 homozygote deletie</span> '
-    '<span class="badge" style="background-color:rgb(255,0,0)">0.2\u20131 heterozygote deletie</span> '
-    '<span class="badge" style="background-color:rgb(0,0,255)">1\u20131.83 duplicatie</span> '
-    '<span class="badge" style="background-color:rgb(0,0,128)">&gt;= 1.83 triplicatie</span>'
+    '<span class="badge" style="background-color:rgb(128,0,0)">&lt; 0.2 homozygote deletion</span> '
+    '<span class="badge" style="background-color:rgb(255,0,0)">0.2\u20131 heterozygote deletion</span> '
+    '<span class="badge" style="background-color:rgb(0,0,255)">1\u20131.83 duplication</span> '
+    '<span class="badge" style="background-color:rgb(0,0,128)">&gt;= 1.83 triplication</span>'
 )
 
 
@@ -420,17 +419,17 @@ def build_headers(data: Dict[str, Dict[str, Value]], columns: List[str]) -> Dict
             header["format"] = "{:,.2f}"
         if col == "Reads.ratio":
             header["cond_formatting_rules"] = {
-                "homozygote_deletie": [{"lt": 0.2}],
-                "heterozygote_deletie": [{"ge": 0.2}],
-                "duplicatie": [{"ge": 1}],
-                "triplicatie": [{"ge": 1.83}],
+                "homozygote_deletion": [{"lt": 0.2}],
+                "heterozygote_deletion": [{"ge": 0.2}],
+                "duplication": [{"ge": 1}],
+                "triplication": [{"ge": 1.83}],
             }
             # Order matters: later entries override earlier ones for values matching multiple rules
             header["cond_formatting_colours"] = [
-                {"homozygote_deletie": "rgb(128,0,0)"},
-                {"heterozygote_deletie": "rgb(255,0,0)"},
-                {"duplicatie": "rgb(0,0,255)"},
-                {"triplicatie": "rgb(0,0,128)"},
+                {"homozygote_deletion": "rgb(128,0,0)"},
+                {"heterozygote_deletion": "rgb(255,0,0)"},
+                {"duplication": "rgb(0,0,255)"},
+                {"triplication": "rgb(0,0,128)"},
             ]
         headers[col] = header
     return headers
