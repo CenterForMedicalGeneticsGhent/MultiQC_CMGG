@@ -28,6 +28,23 @@ def parse_tsv(content: str) -> Tuple[List[str], List[Dict[str, str]]]:
     return header_cols, rows
 
 
+def is_cnv_row(row: Dict[str, str]) -> bool:
+    """Check whether a row represents an actual CNV call or a placeholder.
+
+    When no CNVs are detected for a patient, a placeholder row is present with
+    'Patient', 'Panel', and/or 'Design' filled in, but 'NA' for all CNV call columns
+    (such as Type, Region, Reads.ratio, etc.).
+    """
+    if "Type" in row:
+        val = row["Type"].strip()
+        return bool(val and val != "NA")
+    return any(
+        val.strip() not in ("NA", "")
+        for col, val in row.items()
+        if col not in ("Patient", "Panel", "Design")
+    )
+
+
 def convert_value(value: str) -> Value:
     """Convert a raw string cell value to int/float where possible."""
     if value in ("NA", ""):
@@ -64,10 +81,25 @@ def natural_sort_key(s: str) -> List[Union[int, str]]:
     return [int(text) if text.isdigit() else text.lower() for text in re.split(r"(\d+)", s)]
 
 
+def format_patient_panel_desc(panels_dict: Dict[str, int]) -> str:
+    """Format panel CNV counts for display, e.g. 'panel1: 1, panel2: geen CNVs'."""
+    if not panels_dict:
+        return "geen panel CNVs"
+    parts = []
+    for panel, cnt in panels_dict.items():
+        if cnt == 1:
+            parts.append(f"{panel}: 1 CNV")
+        elif cnt > 1:
+            parts.append(f"{panel}: {cnt} CNVs")
+        else:
+            parts.append(f"{panel}: geen CNVs")
+    return ", ".join(parts)
+
+
 def build_patient_summary(
     panels_rows: List[Dict[str, str]], designs_rows: List[Dict[str, str]]
 ) -> Dict[str, Dict[str, Any]]:
-    """Aggregate CNV counts per patient across panel and design summary files."""
+    """Aggregate panel CNV counts per patient across summary files."""
     summary: Dict[str, Dict[str, Any]] = {}
 
     for r in panels_rows:
@@ -75,16 +107,25 @@ def build_patient_summary(
         if not p:
             continue
         if p not in summary:
-            summary[p] = {"panel_count": 0, "design_count": 0}
-        summary[p]["panel_count"] += 1
+            summary[p] = {"panels": {}, "total_panel_cnvs": 0}
+
+        panel = r.get("Panel", "").strip()
+        if panel:
+            if panel not in summary[p]["panels"]:
+                summary[p]["panels"][panel] = 0
+            if is_cnv_row(r):
+                summary[p]["panels"][panel] += 1
+                summary[p]["total_panel_cnvs"] += 1
+        else:
+            if is_cnv_row(r):
+                summary[p]["total_panel_cnvs"] += 1
 
     for r in designs_rows:
         p = r.get("Patient", "").strip()
         if not p:
             continue
         if p not in summary:
-            summary[p] = {"panel_count": 0, "design_count": 0}
-        summary[p]["design_count"] += 1
+            summary[p] = {"panels": {}, "total_panel_cnvs": 0}
 
     return dict(sorted(summary.items(), key=lambda item: natural_sort_key(item[0])))
 
@@ -95,9 +136,15 @@ def build_patient_filter_html(patient_summary: Dict[str, Dict[str, Any]]) -> str
         return ""
 
     total_patients = len(patient_summary)
+    patients_with_panel_cnvs = sum(
+        1 for s in patient_summary.values() if s["total_panel_cnvs"] > 0
+    )
     meta_json = json.dumps(
         {
-            p: {"p": s["panel_count"], "d": s["design_count"]}
+            p: {
+                "desc": format_patient_panel_desc(s["panels"]),
+                "panel_cnvs": s["total_panel_cnvs"],
+            }
             for p, s in patient_summary.items()
         }
     )
@@ -106,15 +153,7 @@ def build_patient_filter_html(patient_summary: Dict[str, Dict[str, Any]]) -> str
     pills = []
 
     for p, s in patient_summary.items():
-        p_cnt = s["panel_count"]
-        d_cnt = s["design_count"]
-
-        parts = []
-        if p_cnt > 0:
-            parts.append(f"{p_cnt} panel")
-        if d_cnt > 0:
-            parts.append(f"{d_cnt} design")
-        desc = ", ".join(parts)
+        desc = format_patient_panel_desc(s["panels"])
         options.append(
             f'<option value="{html.escape(p, quote=True)}">{html.escape(p)} ({desc})</option>'
         )
@@ -127,13 +166,16 @@ def build_patient_filter_html(patient_summary: Dict[str, Dict[str, Any]]) -> str
 
     options_html = "\n        ".join(options)
     pills_html = "\n      ".join(pills)
+    header_count_text = (
+        f"{total_patients} stalen geanalyseerd, {patients_with_panel_cnvs} met panel CNVs"
+    )
 
     return f"""
 <div class="card ed-patient-filter-card mb-3 shadow-sm">
   <div class="card-header bg-body-tertiary d-flex justify-content-between align-items-center py-2 flex-wrap gap-2">
     <div>
       <strong class="me-2">Patiënten Filter</strong>
-      <span class="text-muted small">({total_patients} stalen met CNVs)</span>
+      <span class="text-muted small">({header_count_text})</span>
     </div>
     <div class="d-flex align-items-center gap-2">
       <select id="ed-patient-select" class="form-select form-select-sm" style="width: auto; min-width: 200px;">
@@ -223,10 +265,7 @@ function setExomeDepthPatientFilter(selectedPatient) {{
     if (selectedPatient) {{
         $('#ed-active-patient-name').text(selectedPatient);
         var meta = window.edPatientMeta && window.edPatientMeta[selectedPatient];
-        var countStr = '';
-        if (meta) {{
-            countStr = '(' + meta.p + ' panel, ' + meta.d + ' design)';
-        }}
+        var countStr = (meta && meta.desc) ? '(' + meta.desc + ')' : '';
         $('#ed-active-patient-counts').text(countStr);
         $('#ed-active-filter-alert').show();
         $('#ed-reset-filter-btn').show();
@@ -411,7 +450,7 @@ class MultiqcModule(BaseMultiqcModule):
             "cnvs_exomedepth/designs"
         )
 
-        if not panels_data and not designs_data:
+        if not panels_rows and not designs_rows:
             log.debug("No ExomeDepth CNV summary files found")
             return
 
@@ -486,6 +525,7 @@ class MultiqcModule(BaseMultiqcModule):
         if not rows:
             return {}, [], []
 
-        data = build_data(rows, key_col)
+        cnv_rows = [r for r in rows if is_cnv_row(r)]
+        data = build_data(cnv_rows, key_col)
         columns = [c for c in header_cols if c != key_col]
         return data, columns, rows
